@@ -1,0 +1,42 @@
+# 환경변수 — 절대 커밋 금지
+.env
+*.env.local
+*.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+htmlcov/
+.coverage
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# 업로드 임시 파일
+uploads/
+*.xlsx
+*.xls
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+infra/nginx/certs/

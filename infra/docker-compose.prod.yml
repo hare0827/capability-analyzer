@@ -1,0 +1,117 @@
+################################################################################
+# PCA 프로덕션 Docker Compose (사양서 §12)
+#
+# 사용법:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 주요 변경사항 (vs 기본 compose):
+#   - DB / Redis 포트 외부 비노출
+#   - Backend: 2 workers, 메모리/CPU 제한
+#   - Nginx: Let's Encrypt TLS (Certbot 자동 갱신)
+#   - 로그 드라이버: json-file (max-size 100m, max-file 5)
+################################################################################
+
+services:
+
+  # ── DB: 외부 포트 제거 ────────────────────────────────────────────────────
+  db:
+    ports: !reset []                    # 기본 compose 의 5432:5432 오버라이드
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  # ── Redis: 외부 포트 제거 ──────────────────────────────────────────────────
+  redis:
+    ports: !reset []
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # ── Backend: 프로덕션 설정 ────────────────────────────────────────────────
+  backend:
+    environment:
+      ENVIRONMENT: production
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Frontend: 리소스 제한 ─────────────────────────────────────────────────
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # ── ClamAV: 리소스 제한 ───────────────────────────────────────────────────
+  clamav:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
+  # ── Nginx: Let's Encrypt TLS ──────────────────────────────────────────────
+  nginx:
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - certbot_webroot:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+
+  # ── Certbot: Let's Encrypt 인증서 자동 갱신 ───────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: pca_certbot
+    volumes:
+      - certbot_webroot:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    # 12시간마다 갱신 시도 (certbot 권장 주기)
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --quiet;
+          sleep 12h & wait $${!};
+        done"
+    depends_on:
+      - nginx
+
+volumes:
+  certbot_webroot:
+  certbot_certs:

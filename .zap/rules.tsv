@@ -1,0 +1,9 @@
+# OWASP ZAP 규칙 억제 목록
+# 형식: <alert_id>\t<IGNORE|WARN|FAIL>\t<URL_regex>\t<parameter>\t<reason>
+#
+# 10096	X-Content-Type-Options Missing — 우리 미들웨어에서 이미 설정됨 (False Positive)
+10096	IGNORE		X-Content-Type-Options	Set by security headers middleware
+# 10020	X-Frame-Options — DENY 설정됨
+10020	IGNORE		X-Frame-Options	Set to DENY by security headers middleware
+# 10038	Content Security Policy (CSP) — 이미 설정됨
+10038	IGNORE		CSP	Configured in security headers middleware
