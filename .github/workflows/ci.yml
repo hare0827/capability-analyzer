@@ -1,66 +1,229 @@
 name: PCA CI
 
 on:
-    push:
-      branches: [main, dev]
-    pull_request:
-      branches: [main, dev]
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
 
 jobs:
-    backend:
-      name: Backend CI
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: backend
-      steps:
-        - uses: actions/checkout@v4
-        - name: Set up Python 3.11
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.11"
-            cache: pip
-        - name: Install dependencies
-          run: pip install -r requirements.txt -r requirements-dev.txt
-        - name: pip audit
-          run: pip-audit --requirement requirements.txt
-        - name: Ruff lint
-          run: ruff check app/ tests/
-        - name: Mypy type check
-          run: mypy app/
-        - name: Pytest unit tests
-          run: |
-            pytest tests/ -v
-              --ignore=tests/test_performance.py
-              --cov=app --cov-report=xml --cov-fail-under=80
-          env:
-            DATABASE_URL: "sqlite+aiosqlite:///:memory:"
-            REDIS_URL: "redis://localhost:6379/0"
-            JWT_SECRET_KEY: "test-secret-key-for-ci"
-            JWT_ALGORITHM: "HS256"
-            ENVIRONMENT: "test"
+  # ──────────────────────────────────────────────
+  # Backend: 보안감사 + Lint + 단위·보안·성능 테스트
+  # ──────────────────────────────────────────────
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
-    frontend:
-      name: Frontend CI
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: frontend
-      steps:
-        - uses: actions/checkout@v4
-        - name: Set up Node 20
-          uses: actions/setup-node@v4
-          with:
-            node-version: "20"
-            cache: npm
-            cache-dependency-path: frontend/package-lock.json
-        - name: Install dependencies
-          run: npm ci
-        - name: npm audit
-          run: npm audit --audit-level=high
-        - name: ESLint
-          run: npm run lint
-        - name: TypeScript type check
-          run: npm run type-check
-        - name: Build
-          run: npm run build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: pip audit (보안 취약점 스캔)
+        run: pip-audit --requirement requirements.txt
+
+      - name: Ruff lint
+        run: ruff check app/ tests/
+
+      - name: Mypy type check
+        run: mypy app/
+
+      - name: Pytest unit + auth + security tests (coverage ≥ 80%)
+        run: |
+          pytest tests/ -v \
+            --ignore=tests/test_performance.py \
+            --cov=app --cov-report=xml --cov-fail-under=80
+        env:
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: test-secret-key-for-ci
+          JWT_ALGORITHM: HS256
+          ENVIRONMENT: test
+
+      - name: Pytest performance benchmarks
+        run: |
+          pytest tests/test_performance.py -v \
+            --benchmark-only \
+            --benchmark-json=benchmark-results.json \
+            --benchmark-max-time=1.0
+        env:
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: test-secret-key-for-ci
+          ENVIRONMENT: test
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: backend/benchmark-results.json
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: backend/coverage.xml
+
+  # ──────────────────────────────────────────────
+  # Frontend: 보안감사 + Lint + 빌드
+  # ──────────────────────────────────────────────
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (보안 취약점 스캔)
+        run: npm audit --audit-level=high
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build
+
+  # ──────────────────────────────────────────────
+  # Docker Compose 통합 빌드 검증
+  # ──────────────────────────────────────────────
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy env example
+        run: |
+          cp .env.example .env
+          sed -i 's/CHANGE_ME.*/ci-placeholder/g' .env
+
+      - name: Docker Compose build
+        working-directory: infra
+        run: docker compose build --no-cache
+
+  # ──────────────────────────────────────────────
+  # E2E: Playwright (전체 스택 기동 후 실행)
+  # ──────────────────────────────────────────────
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps + Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Copy env + start stack
+        run: |
+          cp .env.example .env
+          sed -i 's/CHANGE_ME.*/ci-placeholder/g' .env
+          # JWT_SECRET_KEY 실제값 설정
+          sed -i 's/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=e2e-test-secret-key-32chars!!/' .env
+
+      - name: Start Docker Compose stack
+        working-directory: infra
+        run: |
+          docker compose up -d --build
+          # backend + frontend 기동 대기
+          timeout 90 bash -c \
+            'until curl -sf http://localhost/api/v1/health; do sleep 3; done'
+
+      - name: Run Playwright E2E tests
+        working-directory: frontend
+        env:
+          BASE_URL: http://localhost
+          CI: true
+        run: npx playwright test --reporter=github
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+
+      - name: Tear down stack
+        if: always()
+        working-directory: infra
+        run: docker compose down -v
+
+  # ──────────────────────────────────────────────
+  # OWASP ZAP Baseline Scan
+  # ──────────────────────────────────────────────
+  owasp-scan:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    # main 브랜치 push 시에만 실행 (PR에서는 skip)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy env + start backend
+        run: |
+          cp .env.example .env
+          sed -i 's/CHANGE_ME.*/ci-placeholder/g' .env
+          sed -i 's/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=zap-test-secret-key-32chars!!/' .env
+
+      - name: Start backend service
+        working-directory: infra
+        run: |
+          docker compose up -d backend db
+          timeout 60 bash -c \
+            'until curl -sf http://localhost:8000/api/v1/health; do sleep 3; done'
+
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:8000/api/v1'
+          rules_file_name: '.zap/rules.tsv'
+          fail_action: false          # 경고만 — 빌드 실패 방지
+          artifact_name: 'zap-report'
+
+      - name: Tear down
+        if: always()
+        working-directory: infra
+        run: docker compose down -v
