@@ -11,11 +11,11 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "PCA"
     API_V1_PREFIX: str = "/api/v1"
 
-    # DB
-    DATABASE_URL: str
+    # DB (현재 인메모리 스토어 사용 중 — PostgreSQL 전환 전까지 선택적)
+    DATABASE_URL: str = ""
 
-    # Redis
-    REDIS_URL: str
+    # Redis (현재 인메모리 rate limiter 사용 중 — 선택적)
+    REDIS_URL: str = ""
 
     # JWT
     JWT_SECRET_KEY: str
