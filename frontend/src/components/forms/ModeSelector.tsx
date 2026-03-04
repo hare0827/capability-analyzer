@@ -18,7 +18,7 @@ export default function ModeSelector() {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-gray-700">분석 모드</label>
+      <label className="text-sm font-semibold text-slate-700">분석 모드</label>
       <Tabs value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
         <TabsList className="w-full">
           {MODES.map((m) => (
@@ -28,7 +28,7 @@ export default function ModeSelector() {
           ))}
         </TabsList>
       </Tabs>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-slate-400">
         {MODES.find((m) => m.value === mode)?.desc}
       </p>
     </div>

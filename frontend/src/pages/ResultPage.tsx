@@ -32,7 +32,7 @@ export default function ResultPage() {
   if (!result) {
     return (
       <div className="flex flex-col items-center gap-4 py-24">
-        <p className="text-gray-500">분석 결과가 없습니다.</p>
+        <p className="text-slate-500">분석 결과가 없습니다.</p>
         <Button onClick={() => navigate('/analyze')}>분석 시작하기</Button>
       </div>
     )
@@ -50,11 +50,14 @@ export default function ResultPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">분석 결과</h1>
-          <p className="text-xs font-mono text-gray-400">ID: {result.analysis_id}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-500">
+            Analysis Result
+          </p>
+          <h1 className="mt-0.5 text-2xl font-black text-slate-900">분석 결과</h1>
+          <p className="font-mono text-xs text-slate-400">ID: {result.analysis_id}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate('/analyze')}>재분석</Button>
+          <Button variant="secondary" onClick={() => navigate('/analyze')}>↩ 재분석</Button>
           <ExportMenu
             result={result}
             mode={mode}
@@ -144,7 +147,7 @@ export default function ResultPage() {
               label={`σ̂=${fmt(cpk.sigma_within ?? 0, 5)}`}
               onSpecChange={handleSpecChange}
             />
-            <p className="mt-2 text-xs text-gray-400">USL/LSL 선을 드래그하면 규격이 변경됩니다.</p>
+            <p className="mt-2 text-xs text-slate-400">USL/LSL 선을 드래그하면 규격이 변경됩니다.</p>
           </Card>
 
           {/* 불량률 + Sigma Bar */}
@@ -207,7 +210,7 @@ export default function ResultPage() {
           <Card>
             <CardHeader><CardTitle>정규 확률지 (Normal Probability Plot)</CardTitle></CardHeader>
             <ProbabilityPlot data={data} />
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-slate-400">
               점이 기준 직선에 가까울수록 정규분포를 잘 따릅니다.
             </p>
           </Card>
@@ -227,8 +230,8 @@ export default function ResultPage() {
             { label: '중앙값',     value: fmt(stats.median) },
           ].map(({ label, value }) => (
             <div key={label} className="flex flex-col gap-0.5 text-center">
-              <p className="text-xs text-gray-400">{label}</p>
-              <p className="font-mono text-sm font-semibold text-gray-800">{value}</p>
+              <p className="text-xs text-slate-400">{label}</p>
+              <p className="font-mono text-sm font-semibold text-slate-800">{value}</p>
             </div>
           ))}
         </div>
@@ -261,17 +264,17 @@ function IndexCard({ label, res }: { label: string; res: IndexResult }) {
           val < 1.0 ? 'text-red-500' : val < 1.33 ? 'text-yellow-500' :
           val < 1.67 ? 'text-green-500' : 'text-blue-500'
         }`}>{fmt(val)}</span>
-        <span className="mb-1 text-sm text-gray-400">{label}</span>
+        <span className="mb-1 text-sm text-slate-400">{label}</span>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3">
         <div>
-          <p className="text-xs text-gray-400">DPMO</p>
+          <p className="text-xs text-slate-400">DPMO</p>
           <p className={`text-lg font-bold font-mono ${getDpmoColor(res.dpmo)}`}>{fmtDpmo(res.dpmo)}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-400">Sigma Level</p>
-          <p className="text-lg font-bold font-mono text-gray-800">{fmt(res.sigma_level, 2)}σ</p>
+          <p className="text-xs text-slate-400">Sigma Level</p>
+          <p className="text-lg font-bold font-mono text-slate-800">{fmt(res.sigma_level, 2)}σ</p>
         </div>
       </div>
 
@@ -290,8 +293,8 @@ function IndexCard({ label, res }: { label: string; res: IndexResult }) {
           { l: 'σ (overall)',  v: fmt(res.sigma_overall ?? 0, 6) },
         ]).map(({ l, v }) => (
           <div key={l} className="flex justify-between text-xs">
-            <span className="text-gray-400">{l}</span>
-            <span className="font-mono text-gray-700">{v}</span>
+            <span className="text-slate-400">{l}</span>
+            <span className="font-mono text-slate-700">{v}</span>
           </div>
         ))}
       </div>
@@ -317,7 +320,7 @@ function RefTable({ currentVal }: { currentVal: number }) {
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-100 text-gray-500">
+          <tr className="border-b border-slate-100 text-slate-500">
             <th className="py-2 text-left">Cpk / Ppk</th>
             <th className="py-2 text-left">Sigma</th>
             <th className="py-2 text-right">불량률 (%)</th>
@@ -328,7 +331,7 @@ function RefTable({ currentVal }: { currentVal: number }) {
         <tbody>
           {REF_ROWS.map(([idx, sig, pct, dpmo, grade], i) => (
             <tr key={idx}
-              className={`border-b border-gray-50 ${i === closestIdx ? 'bg-blue-50 font-medium' : ''}`}
+              className={`border-b border-slate-50 ${i === closestIdx ? 'bg-blue-50 font-medium' : ''}`}
             >
               <td className="py-2 font-mono">{idx.toFixed(2)}</td>
               <td className="py-2">{sig}σ</td>

@@ -2,9 +2,9 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { to: '/dashboard',  label: '대시보드' },
-  { to: '/analyze',    label: '새 분석' },
-  { to: '/history',    label: '분석 이력' },
+  { to: '/dashboard', label: '대시보드', icon: '⬡' },
+  { to: '/analyze',   label: '새 분석',  icon: '◈' },
+  { to: '/history',   label: '분석 이력', icon: '◎' },
 ]
 
 export default function AppLayout() {
@@ -16,16 +16,30 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {/* 상단 네비게이션 바 */}
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+    <div className="flex min-h-screen flex-col" style={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' }}>
+      {/* 상단 헤더 — 다크 슬레이트 */}
+      <header
+        className="sticky top-0 z-30 border-b border-slate-700/50"
+        style={{
+          background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 60%, #1e3a5f 100%)',
+          boxShadow: '0 2px 16px rgba(15,23,42,0.4)',
+        }}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           {/* 로고 */}
-          <NavLink to="/dashboard" className="flex items-center gap-2">
-            <span className="rounded-lg bg-blue-600 px-2 py-1 text-sm font-bold text-white">PCA</span>
-            <span className="hidden text-sm font-semibold text-gray-700 sm:block">
-              Process Capability Analyzer
-            </span>
+          <NavLink to="/dashboard" className="flex items-center gap-3 group">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white font-black text-sm"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)' }}
+            >
+              Cp
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-sm font-bold text-white leading-none">
+                Process Capability
+              </p>
+              <p className="text-[10px] text-slate-400 leading-none mt-0.5">Analyzer</p>
+            </div>
           </NavLink>
 
           {/* 메뉴 */}
@@ -36,10 +50,10 @@ export default function AppLayout() {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
                     isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-100',
+                      ? 'bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/30'
+                      : 'text-slate-400 hover:bg-white/10 hover:text-white',
                   )
                 }
               >
@@ -51,7 +65,7 @@ export default function AppLayout() {
           {/* 로그아웃 */}
           <button
             onClick={handleLogout}
-            className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-100"
+            className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
           >
             로그아웃
           </button>
@@ -62,6 +76,11 @@ export default function AppLayout() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
         <Outlet />
       </main>
+
+      {/* 하단 푸터 */}
+      <footer className="border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+        Process Capability Analyzer · Statistical Quality Control
+      </footer>
     </div>
   )
 }

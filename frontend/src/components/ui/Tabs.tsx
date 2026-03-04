@@ -26,10 +26,7 @@ export function Tabs({ value, onValueChange, className, children, ...props }: Ta
 export function TabsList({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        'flex gap-1 rounded-lg bg-gray-100 p-1',
-        className,
-      )}
+      className={cn('flex gap-1 rounded-xl bg-slate-100/80 p-1', className)}
       role="tablist"
       {...props}
     >
@@ -52,10 +49,10 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
       aria-selected={isActive}
       onClick={() => onChange(value)}
       className={cn(
-        'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+        'flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150',
         isActive
-          ? 'bg-white text-blue-600 shadow-sm'
-          : 'text-gray-500 hover:text-gray-700',
+          ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-100'
+          : 'text-slate-500 hover:text-slate-700 hover:bg-white/60',
         className,
       )}
       {...props}
