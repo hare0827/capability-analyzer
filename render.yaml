@@ -6,8 +6,7 @@ services:
     dockerContext: ./backend
     port: 8000
     healthCheckPath: /api/v1/health
-    # free tier 512MB 제한 — worker 1개로 제한
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --timeout-graceful-shutdown 30 --access-log
+    # Docker 배포 시 startCommand는 무시됨 — Dockerfile CMD의 WEB_CONCURRENCY로 제어
     envVars:
       - key: ENVIRONMENT
         value: production

@@ -45,11 +45,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8000
 
-# 프로덕션: 2 workers, graceful shutdown timeout 30s
-# 개발: CMD 오버라이드로 --reload 사용
-CMD ["uvicorn", "app.main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "2", \
-     "--timeout-graceful-shutdown", "30", \
-     "--access-log"]
+# Render 무료 티어(512MB) 대응: worker 1개로 제한
+# 스케일업 시 WEB_CONCURRENCY 환경변수로 조절
+CMD ["sh", "-c", "uvicorn app.main:app \
+     --host 0.0.0.0 \
+     --port 8000 \
+     --workers ${WEB_CONCURRENCY:-1} \
+     --timeout-graceful-shutdown 30 \
+     --access-log"]
