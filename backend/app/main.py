@@ -58,6 +58,12 @@ app.include_router(upload_router.router,  prefix=settings.API_V1_PREFIX)
 app.include_router(reports_router.router, prefix=settings.API_V1_PREFIX)
 
 
+@app.get("/", include_in_schema=False)
+async def root():
+    """Render 헬스체크용 루트 엔드포인트."""
+    return {"status": "ok"}
+
+
 @app.get(f"{settings.API_V1_PREFIX}/health", include_in_schema=False)
 async def health():
     """
