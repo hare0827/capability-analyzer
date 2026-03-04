@@ -47,13 +47,35 @@ export default function ManualInput() {
     setTimeout(() => inputRefs.current[0]?.focus(), 0)
   }
 
-  // Tab/Enter → 오른쪽으로, 오른쪽 끝이면 다음 행 왼쪽 (row-major)
+  // 키 내비게이션
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
-    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+    const row = Math.floor(idx / NUM_COLS)
+    const col = idx % NUM_COLS
+
+    if (e.key === 'ArrowUp') {
+      // ↑ 위 행 같은 열
+      e.preventDefault()
+      const upIdx = idx - NUM_COLS
+      if (upIdx >= 0) inputRefs.current[upIdx]?.focus()
+    } else if (e.key === 'ArrowDown') {
+      // ↓ 아래 행 같은 열 (없으면 행 추가)
+      e.preventDefault()
+      const downIdx = idx + NUM_COLS
+      if (downIdx < cells.length) {
+        inputRefs.current[downIdx]?.focus()
+      } else {
+        setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
+        setTimeout(() => inputRefs.current[downIdx]?.focus(), 0)
+      }
+    } else if (e.key === 'ArrowLeft') {
+      if (col > 0) { e.preventDefault(); inputRefs.current[idx - 1]?.focus() }
+    } else if (e.key === 'ArrowRight') {
+      if (col < NUM_COLS - 1) { e.preventDefault(); inputRefs.current[idx + 1]?.focus() }
+    } else if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+      // Enter / Tab → 오른쪽, 오른쪽 끝이면 다음 행 왼쪽
       e.preventDefault()
       const next = idx + 1
       if (next >= cells.length) {
-        // 마지막 셀 → 행 추가
         setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
         setTimeout(() => inputRefs.current[next]?.focus(), 0)
       } else {
@@ -63,9 +85,8 @@ export default function ManualInput() {
       e.preventDefault()
       if (idx > 0) inputRefs.current[idx - 1]?.focus()
     } else if (e.key === 'Backspace' && cells[idx] === '' && cells.length > NUM_COLS) {
+      // 빈 셀에서 Backspace → 해당 행 삭제
       e.preventDefault()
-      // 빈 셀 백스페이스 → 해당 행 전체 삭제 (행 단위 삭제)
-      const row = Math.floor(idx / NUM_COLS)
       const newCells = cells.filter((_, i) => Math.floor(i / NUM_COLS) !== row)
       setCells(newCells.length >= NUM_COLS ? newCells : makeEmptyCells(INITIAL_VISUAL_ROWS))
       setTimeout(() => inputRefs.current[Math.max(0, row * NUM_COLS - 1)]?.focus(), 0)
@@ -172,6 +193,7 @@ export default function ManualInput() {
                       valL.trim() !== '' && !isNaN(parseFloat(valL))
                         ? 'text-gray-800' : 'text-transparent',
                     ].join(' ')}
+                    onWheel={(e) => e.currentTarget.blur()}
                   />
                 </div>
                 {/* C2 셀 */}
@@ -190,6 +212,7 @@ export default function ManualInput() {
                         valR.trim() !== '' && !isNaN(parseFloat(valR))
                           ? 'text-gray-800' : 'text-transparent',
                       ].join(' ')}
+                      onWheel={(e) => e.currentTarget.blur()}
                     />
                   ) : null}
                 </div>

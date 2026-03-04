@@ -39,8 +39,29 @@ export default function AnalyzePage() {
       setResult(result)
       navigate('/result')
     } catch (e: unknown) {
-      const detail = (e as { response?: { data?: { detail?: unknown } } }).response?.data?.detail
-      setApiError(typeof detail === 'string' ? detail : '분석 중 오류가 발생했습니다.')
+      type ApiErr = { response?: { status?: number; data?: { detail?: unknown } }; message?: string }
+      const err = e as ApiErr
+      const status = err.response?.status
+      const detail = err.response?.data?.detail
+
+      if (Array.isArray(detail)) {
+        // Pydantic 422 validation error — detail은 [{loc, msg, type}] 배열
+        const msgs = (detail as { msg?: string; loc?: string[] }[])
+          .map((d) => d.msg ?? JSON.stringify(d))
+          .join(' / ')
+        setApiError(`입력값 오류: ${msgs}`)
+      } else if (typeof detail === 'string') {
+        setApiError(detail)
+      } else if (!err.response) {
+        // 네트워크 에러 (서버 미응답)
+        setApiError(`서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요. (${err.message ?? 'Network Error'})`)
+      } else if (status === 422) {
+        setApiError('입력값 형식이 올바르지 않습니다. USL/LSL과 데이터를 다시 확인하세요.')
+      } else if (status === 429) {
+        setApiError('요청이 너무 많습니다. 잠시 후 다시 시도하세요.')
+      } else {
+        setApiError(`오류 (HTTP ${status ?? '?'}): 서버에서 예상치 못한 오류가 발생했습니다.`)
+      }
     } finally {
       setLoading(false)
     }
