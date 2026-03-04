@@ -1,4 +1,4 @@
-JWT 생성/검증 + bcrypt 해싱 (사양서 §10)
+"""JWT 생성/검증 + bcrypt 해싱 (사양서 §10)
 
 - Access Token:  15분
 - Refresh Token: 7일
