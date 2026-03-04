@@ -32,9 +32,9 @@ _users: dict[str, UserRecord] = {}  # email → UserRecord
 
 def _seed() -> None:
     seeds = [
-        ("admin@pca.dev",    "Admin1234!",    "admin"),
-        ("engineer@pca.dev", "Engineer123!",  "engineer"),
-        ("viewer@pca.dev",   "Viewer1234!",   "viewer"),
+        ("admin@pca.local",    "Admin1234!",    "admin"),
+        ("engineer@pca.local", "Engineer123!",  "engineer"),
+        ("viewer@pca.local",   "Viewer1234!",   "viewer"),
     ]
     for email, pw, role in seeds:
         _users[email] = UserRecord(
