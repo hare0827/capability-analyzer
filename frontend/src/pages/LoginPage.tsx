@@ -27,8 +27,13 @@ export default function LoginPage() {
       navigate('/dashboard')
     } catch (err: unknown) {
       const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setError(detail ?? '로그인에 실패했습니다. 이메일과 비밀번호를 확인하세요.')
+        (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      const msg = typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? (detail[0] as { msg?: string })?.msg ?? '로그인에 실패했습니다.'
+          : '로그인에 실패했습니다. 이메일과 비밀번호를 확인하세요.'
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -61,7 +66,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="engineer@pca.local"
+              placeholder="admin@pca.dev"
               autoComplete="email"
               required
             />
