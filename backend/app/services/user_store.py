@@ -3,9 +3,9 @@
 Phase 5 완료 후 PostgreSQL + SQLAlchemy 으로 교체.
 
 시드 계정:
-  admin@pca.dev   / Admin1234!   (admin)
-  engineer@pca.dev/ Engineer123! (engineer)
-  viewer@pca.dev  / Viewer1234!  (viewer)
+  admin@pca.local    / Admin1234!   (admin)
+  engineer@pca.local / Engineer123! (engineer)
+  viewer@pca.local   / Viewer1234!  (viewer)
 """
 
 from __future__ import annotations
