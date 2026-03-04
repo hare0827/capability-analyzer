@@ -60,9 +60,9 @@ app.include_router(reports_router.router, prefix=settings.API_V1_PREFIX)
 app.include_router(history_router.router, prefix=settings.API_V1_PREFIX)
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def root():
-    """Render 헬스체크용 루트 엔드포인트."""
+    """Render 헬스체크용 루트 엔드포인트 (GET + HEAD 모두 허용)."""
     return {"status": "ok"}
 
 
