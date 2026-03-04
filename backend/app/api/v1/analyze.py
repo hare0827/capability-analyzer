@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -7,6 +8,8 @@ from app.engine.analyzer import analyze, AnalyzeInput
 from app.core.deps import CurrentUser, get_current_user, get_client_ip
 from app.core.rate_limit import analyze_limiter
 from app.services.audit_log import log_action
+from app.services import history_store
+from app.services.history_store import HistoryRecord
 
 router = APIRouter(prefix="/analyze", tags=["analyze"])
 
@@ -54,6 +57,19 @@ async def analyze_endpoint(
         client_ip=ip,
         status_code=200,
     )
+
+    # 이력 기록
+    dpmo = (result.cpk.dpmo if result.cpk else None) or (result.ppk.dpmo if result.ppk else None)
+    history_store.add(HistoryRecord(
+        id=result.analysis_id,
+        user_id=current.user_id,
+        mode=req.mode,
+        cpk=result.cpk.cpk if result.cpk else None,
+        ppk=result.ppk.ppk if result.ppk else None,
+        dpmo=dpmo,
+        part_number=None,
+        created_at=datetime.now(timezone.utc).isoformat(),
+    ))
 
     return AnalyzeResponse(
         status=result.status,

@@ -6,6 +6,7 @@ from app.api.v1 import analyze as analyze_router
 from app.api.v1 import upload as upload_router
 from app.api.v1 import auth as auth_router
 from app.api.v1 import reports as reports_router
+from app.api.v1 import history as history_router
 
 _START_TIME = time.time()
 
@@ -56,6 +57,7 @@ app.include_router(auth_router.router,    prefix=settings.API_V1_PREFIX)
 app.include_router(analyze_router.router, prefix=settings.API_V1_PREFIX)
 app.include_router(upload_router.router,  prefix=settings.API_V1_PREFIX)
 app.include_router(reports_router.router, prefix=settings.API_V1_PREFIX)
+app.include_router(history_router.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/", include_in_schema=False)

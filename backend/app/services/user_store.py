@@ -31,14 +31,15 @@ _users: dict[str, UserRecord] = {}  # email → UserRecord
 
 
 def _seed() -> None:
+    # UUID 고정: 서버 재시작 후에도 refresh token이 유효하도록
     seeds = [
-        ("admin@pca.local",    "Admin1234!",    "admin"),
-        ("engineer@pca.local", "Engineer123!",  "engineer"),
-        ("viewer@pca.local",   "Viewer1234!",   "viewer"),
+        ("admin@pca.local",    "Admin1234!",    "admin",    "00000000-0000-0000-0000-000000000001"),
+        ("engineer@pca.local", "Engineer123!",  "engineer", "00000000-0000-0000-0000-000000000002"),
+        ("viewer@pca.local",   "Viewer1234!",   "viewer",   "00000000-0000-0000-0000-000000000003"),
     ]
-    for email, pw, role in seeds:
+    for email, pw, role, uid in seeds:
         _users[email] = UserRecord(
-            id=str(uuid.uuid4()),
+            id=uid,
             email=email,
             password_hash=hash_password(pw),
             role=role,

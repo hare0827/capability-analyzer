@@ -29,11 +29,11 @@ export default function AnalyzePage() {
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
 
-  // 분석 실행 가능 여부
+  // 분석 실행 가능 여부 (LSL은 음수 허용)
   const canAnalyze =
     data.length >= 5 &&
-    spec.usl > 0 &&
-    spec.lsl > 0 &&
+    spec.usl !== 0 &&
+    spec.lsl !== 0 &&
     spec.usl > spec.lsl
 
   const handleAnalyze = async () => {
