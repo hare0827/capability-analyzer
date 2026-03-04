@@ -16,10 +16,7 @@ import type { AnalyzeRequest } from '@/lib/types'
 
 export default function AnalyzePage() {
   const navigate = useNavigate()
-  const {
-    mode, spec, data, subgroupSize, sigmaMethod,
-    outlierRemoval, setResult,
-  } = useAnalysisStore()
+  const { mode, spec, data, subgroupSize, sigmaMethod, outlierRemoval, setResult } = useAnalysisStore()
 
   const [inputTab, setInputTab] = useState<'manual' | 'file'>('manual')
   const [loading, setLoading] = useState(false)
@@ -55,16 +52,37 @@ export default function AnalyzePage() {
       <div className="flex items-center justify-between border-b border-gray-200 pb-4">
         <div>
           <h1 className="text-xl font-semibold text-gray-800">Capability Analysis</h1>
-          <p className="text-[12px] text-gray-500 mt-0.5">Configure analysis options and enter measurement data</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">
+            Configure options and enter measurement data, then click Run Analysis
+          </p>
         </div>
+        <Button size="lg" disabled={!canAnalyze} loading={loading} onClick={handleAnalyze}>
+          {loading ? 'Calculating...' : 'Run Analysis'}
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* ── 왼쪽: 설정 + 실행 ── */}
-        <div className="flex flex-col gap-4 lg:col-span-1">
-          {/* 분석 옵션 */}
+      {/* 오류 / 유효성 메시지 */}
+      {apiError && (
+        <div className="rounded-sm border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-600">
+          {apiError}
+        </div>
+      )}
+      {!canAnalyze && data.length > 0 && (
+        <div className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-2.5 text-[12px] text-amber-700">
+          {data.length < 5
+            ? `데이터 ${data.length}개 — Run Analysis를 위해 최소 5개가 필요합니다`
+            : spec.usl <= spec.lsl
+            ? 'USL은 LSL보다 커야 합니다'
+            : '규격값(USL / LSL)을 입력하세요'}
+        </div>
+      )}
+
+      {/* ── 메인 컨텐츠: 좌(옵션) + 우(워크시트) ── */}
+      <div className="flex gap-5">
+        {/* 왼쪽 사이드바 — 고정 너비 280px */}
+        <div className="flex w-[280px] shrink-0 flex-col gap-4">
           <Card>
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100 pb-2">
+            <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-[#0083CA] border-b border-gray-100 pb-2">
               Analysis Options
             </p>
             <div className="flex flex-col gap-5">
@@ -74,68 +92,46 @@ export default function AnalyzePage() {
           </Card>
 
           {/* 입력 현황 */}
-          {data.length > 0 && (
-            <div className="rounded-sm border border-gray-200 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                Input Summary
-              </p>
-              <div className="grid grid-cols-3 divide-x divide-gray-100 text-center">
-                <div className="pr-2">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">N</p>
-                  <p className={`text-xl font-bold ${
-                    data.length < 5 ? 'text-red-600' : data.length < 30 ? 'text-amber-600' : 'text-[#0083CA]'
-                  }`}>{data.length}</p>
+          <Card>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+              Input Summary
+            </p>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: 'N (데이터 수)', value: data.length || '—',
+                  color: data.length < 5 && data.length > 0 ? 'text-red-600'
+                       : data.length < 30 && data.length > 0 ? 'text-amber-600'
+                       : 'text-[#0083CA]' },
+                { label: 'USL', value: spec.usl || '—', color: 'text-gray-800' },
+                { label: 'LSL', value: spec.lsl || '—', color: 'text-gray-800' },
+                { label: 'Mode', value: mode.toUpperCase(), color: 'text-gray-800' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="flex items-center justify-between border-b border-gray-50 py-1.5 last:border-b-0">
+                  <span className="text-[12px] text-gray-500">{label}</span>
+                  <span className={`font-mono text-[13px] font-semibold ${color}`}>{value}</span>
                 </div>
-                <div className="px-2">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">USL</p>
-                  <p className="text-xl font-bold text-gray-800">{spec.usl || '—'}</p>
-                </div>
-                <div className="pl-2">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">LSL</p>
-                  <p className="text-xl font-bold text-gray-800">{spec.lsl || '—'}</p>
-                </div>
-              </div>
+              ))}
             </div>
-          )}
-
-          {/* 유효성 메시지 */}
-          {!canAnalyze && data.length > 0 && (
-            <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
-              {data.length < 5
-                ? `데이터 ${data.length}개 — 최소 5개 필요`
-                : spec.usl <= spec.lsl
-                ? 'USL must be greater than LSL'
-                : '규격값을 확인하세요'}
-            </div>
-          )}
-
-          {/* 실행 버튼 */}
-          <Button size="lg" className="w-full" disabled={!canAnalyze} loading={loading} onClick={handleAnalyze}>
-            {loading ? 'Calculating...' : 'Run Analysis'}
-          </Button>
-
-          {apiError && (
-            <div className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-600">
-              {apiError}
-            </div>
-          )}
+          </Card>
         </div>
 
-        {/* ── 오른쪽: 데이터 입력 ── */}
-        <Card className="lg:col-span-2">
-          <Tabs value={inputTab} onValueChange={(v) => setInputTab(v as 'manual' | 'file')}>
-            <TabsList className="mb-4 w-full max-w-xs">
-              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-              <TabsTrigger value="file">File Import</TabsTrigger>
-            </TabsList>
-            <TabsContent value="manual">
-              <ManualInput />
-            </TabsContent>
-            <TabsContent value="file">
-              <FileUpload />
-            </TabsContent>
-          </Tabs>
-        </Card>
+        {/* 오른쪽 워크시트 — 나머지 너비 전부 */}
+        <div className="flex flex-1 flex-col">
+          <Card className="flex-1">
+            <Tabs value={inputTab} onValueChange={(v) => setInputTab(v as 'manual' | 'file')}>
+              <TabsList className="mb-4 w-full max-w-sm">
+                <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                <TabsTrigger value="file">File Import</TabsTrigger>
+              </TabsList>
+              <TabsContent value="manual">
+                <ManualInput />
+              </TabsContent>
+              <TabsContent value="file">
+                <FileUpload />
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </div>
       </div>
     </div>
   )

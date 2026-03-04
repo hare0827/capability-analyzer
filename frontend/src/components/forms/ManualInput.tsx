@@ -1,27 +1,32 @@
 /**
  * SCR-04: 수동 데이터 입력 — Minitab 워크시트 스타일
- * - 각 행에 하나의 측정값 (쉼표 구분 폐기)
- * - Tab / Enter: 다음 셀 이동 (마지막 행 → 자동 행 추가)
- * - Backspace on empty cell: 해당 행 삭제
- * - n < 5 오류, n < 30 경고, 실시간 통계 (n, 평균, σ)
+ * - 행 우선(row-major): Tab → 오른쪽 → 다음 행 왼쪽 (엑셀과 동일)
+ * - cells[row * 2 + col] 방식으로 인덱스 관리
  */
 import { useState, useEffect, useRef } from 'react'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import { fmt } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 
-const INITIAL_ROWS = 20
+const NUM_COLS = 2
+const INITIAL_VISUAL_ROWS = 12   // 12행 × 2열 = 24 셀
+
+function makeEmptyCells(rows: number) {
+  return Array(rows * NUM_COLS).fill('')
+}
 
 export default function ManualInput() {
   const { setData, outlierRemoval, setOutlierRemoval } = useAnalysisStore()
-  const [cells, setCells] = useState<string[]>(Array(INITIAL_ROWS).fill(''))
+  const [cells, setCells] = useState<string[]>(makeEmptyCells(INITIAL_VISUAL_ROWS))
   const [stats, setStats] = useState<{ n: number; mean: number; std: number } | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  const numRows = Math.ceil(cells.length / NUM_COLS)
+
+  // 셀 → 숫자 배열 + 통계
   useEffect(() => {
     const values = cells.map((c) => parseFloat(c.trim())).filter((v) => !isNaN(v))
     setData(values)
-
     if (values.length === 0) { setStats(null); return }
     const n = values.length
     const mean = values.reduce((a, b) => a + b, 0) / n
@@ -31,34 +36,39 @@ export default function ManualInput() {
     setStats({ n, mean, std })
   }, [cells, setData])
 
-  const updateCell = (i: number, v: string) =>
-    setCells((prev) => { const next = [...prev]; next[i] = v; return next })
+  const updateCell = (idx: number, val: string) =>
+    setCells((prev) => { const next = [...prev]; next[idx] = val; return next })
 
-  const addRows = (count = 10) =>
-    setCells((prev) => [...prev, ...Array(count).fill('')])
+  const addRows = (count = 5) =>
+    setCells((prev) => [...prev, ...Array(count * NUM_COLS).fill('')])
 
   const clearAll = () => {
-    setCells(Array(INITIAL_ROWS).fill(''))
+    setCells(makeEmptyCells(INITIAL_VISUAL_ROWS))
     setTimeout(() => inputRefs.current[0]?.focus(), 0)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, i: number) => {
+  // Tab/Enter → 오른쪽으로, 오른쪽 끝이면 다음 행 왼쪽 (row-major)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
     if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
       e.preventDefault()
-      const next = i + 1
+      const next = idx + 1
       if (next >= cells.length) {
-        setCells((prev) => [...prev, ''])
+        // 마지막 셀 → 행 추가
+        setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
         setTimeout(() => inputRefs.current[next]?.focus(), 0)
       } else {
         inputRefs.current[next]?.focus()
       }
     } else if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault()
-      if (i > 0) inputRefs.current[i - 1]?.focus()
-    } else if (e.key === 'Backspace' && cells[i] === '' && cells.length > 1) {
+      if (idx > 0) inputRefs.current[idx - 1]?.focus()
+    } else if (e.key === 'Backspace' && cells[idx] === '' && cells.length > NUM_COLS) {
       e.preventDefault()
-      setCells((prev) => prev.filter((_, idx) => idx !== i))
-      setTimeout(() => inputRefs.current[Math.max(0, i - 1)]?.focus(), 0)
+      // 빈 셀 백스페이스 → 해당 행 전체 삭제 (행 단위 삭제)
+      const row = Math.floor(idx / NUM_COLS)
+      const newCells = cells.filter((_, i) => Math.floor(i / NUM_COLS) !== row)
+      setCells(newCells.length >= NUM_COLS ? newCells : makeEmptyCells(INITIAL_VISUAL_ROWS))
+      setTimeout(() => inputRefs.current[Math.max(0, row * NUM_COLS - 1)]?.focus(), 0)
     }
   }
 
@@ -86,140 +96,123 @@ export default function ManualInput() {
         </div>
       )}
 
-      {/* 워크시트 헤더 */}
+      {/* 툴바 */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide">
-            Worksheet
-          </span>
-          <span className="text-[11px] text-gray-400">
-            Tab / Enter: 다음 셀
-          </span>
-        </div>
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+          Worksheet &nbsp;·&nbsp; Tab / Enter: 오른쪽 → 다음 행
+        </span>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => addRows(10)}
-            className="text-[12px] text-[#0083CA] hover:underline font-medium"
-          >
-            + 10행 추가
+          <button type="button" onClick={() => addRows(5)}
+            className="text-[12px] font-medium text-[#0083CA] hover:underline">
+            + 5행 추가
           </button>
-          <span className="text-gray-200">|</span>
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-[12px] text-gray-400 hover:text-red-500 font-medium"
-          >
+          <span className="text-gray-200 select-none">|</span>
+          <button type="button" onClick={clearAll}
+            className="text-[12px] font-medium text-gray-400 hover:text-red-500">
             Clear All
           </button>
         </div>
       </div>
 
-      {/* ── Minitab 워크시트 스타일 표 ── */}
+      {/* ── 워크시트 테이블 ── */}
       <div className="overflow-hidden rounded-sm border border-gray-300">
         {/* 열 헤더 */}
-        <div className="grid border-b border-gray-300 bg-gray-100"
-          style={{ gridTemplateColumns: '44px 1fr 44px 1fr' }}>
-          <div className="border-r border-gray-300 px-2 py-1.5 text-center text-[11px] font-semibold text-gray-500" />
-          <div className="border-r border-gray-300 px-3 py-1.5 text-[11px] font-semibold text-gray-600 text-center">
-            C1 — Measurement
+        <div className="grid bg-gray-100 border-b border-gray-300"
+          style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
+          <div className="border-r border-gray-300 py-1.5" />
+          <div className="border-r border-gray-300 px-3 py-1.5 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+            C1
           </div>
-          <div className="border-r border-gray-300 px-2 py-1.5 text-center text-[11px] font-semibold text-gray-500" />
-          <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-600 text-center">
-            C2 — Measurement
+          <div className="px-3 py-1.5 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+            C2
+          </div>
+        </div>
+        {/* 열 이름 행 */}
+        <div className="grid border-b border-gray-200 bg-gray-50"
+          style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
+          <div className="border-r border-gray-200 py-1" />
+          <div className="border-r border-gray-200 px-3 py-1 text-center text-[11px] text-gray-400 italic">
+            Measurement
+          </div>
+          <div className="px-3 py-1 text-center text-[11px] text-gray-400 italic">
+            Measurement
           </div>
         </div>
 
-        {/* 셀 영역 */}
-        <div
-          className="max-h-72 overflow-y-auto scrollbar-thin bg-white"
-        >
-          {(() => {
-            const half = Math.ceil(cells.length / 2)
-            const rows = Array.from({ length: half }, (_, r) => r)
-            return rows.map((r) => {
-              const leftIdx = r
-              const rightIdx = r + half
-              const hasRight = rightIdx < cells.length
+        {/* 데이터 행 (row-major) */}
+        <div className="max-h-72 overflow-y-auto bg-white">
+          {Array.from({ length: numRows }, (_, r) => {
+            const idxL = r * NUM_COLS       // C1 셀
+            const idxR = r * NUM_COLS + 1   // C2 셀
 
-              return (
-                <div
-                  key={r}
-                  className="grid border-b border-gray-100 last:border-b-0 hover:bg-[#f0f7fc]"
-                  style={{ gridTemplateColumns: '44px 1fr 44px 1fr' }}
-                >
-                  {/* 왼쪽 행번호 */}
-                  <div className="flex items-center justify-center border-r border-gray-200 bg-gray-50 py-0.5 text-[11px] font-mono text-gray-400">
-                    {leftIdx + 1}
-                  </div>
-                  {/* 왼쪽 셀 */}
-                  <div className="border-r border-gray-200">
+            const valL = cells[idxL] ?? ''
+            const valR = cells[idxR] ?? ''
+            const hasRight = idxR < cells.length
+
+            return (
+              <div key={r}
+                className="grid border-b border-gray-100 last:border-b-0 hover:bg-[#f0f7fc] transition-colors"
+                style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
+                {/* 행 번호 */}
+                <div className="flex items-center justify-center border-r border-gray-200 bg-gray-50 text-[11px] font-mono text-gray-400 select-none">
+                  {r + 1}
+                </div>
+                {/* C1 셀 */}
+                <div className="border-r border-gray-100">
+                  <input
+                    ref={(el) => { inputRefs.current[idxL] = el }}
+                    type="number"
+                    step="any"
+                    value={valL}
+                    onChange={(e) => updateCell(idxL, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, idxL)}
+                    className={[
+                      'w-full px-3 py-[5px] font-mono text-[13px] text-right bg-transparent',
+                      'focus:outline-none focus:bg-[#e6f3fb]',
+                      valL.trim() !== '' && !isNaN(parseFloat(valL))
+                        ? 'text-gray-800' : 'text-transparent',
+                    ].join(' ')}
+                  />
+                </div>
+                {/* C2 셀 */}
+                <div>
+                  {hasRight ? (
                     <input
-                      ref={(el) => { inputRefs.current[leftIdx] = el }}
+                      ref={(el) => { inputRefs.current[idxR] = el }}
                       type="number"
                       step="any"
-                      value={cells[leftIdx]}
-                      onChange={(e) => updateCell(leftIdx, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, leftIdx)}
-                      placeholder=""
+                      value={valR}
+                      onChange={(e) => updateCell(idxR, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, idxR)}
                       className={[
-                        'w-full px-3 py-1 font-mono text-[13px] text-right',
+                        'w-full px-3 py-[5px] font-mono text-[13px] text-right bg-transparent',
                         'focus:outline-none focus:bg-[#e6f3fb]',
-                        cells[leftIdx].trim() !== '' && !isNaN(parseFloat(cells[leftIdx]))
-                          ? 'text-gray-800'
-                          : 'text-gray-300',
+                        valR.trim() !== '' && !isNaN(parseFloat(valR))
+                          ? 'text-gray-800' : 'text-transparent',
                       ].join(' ')}
                     />
-                  </div>
-                  {/* 오른쪽 행번호 */}
-                  <div className="flex items-center justify-center border-r border-gray-200 bg-gray-50 py-0.5 text-[11px] font-mono text-gray-400">
-                    {hasRight ? rightIdx + 1 : ''}
-                  </div>
-                  {/* 오른쪽 셀 */}
-                  <div>
-                    {hasRight ? (
-                      <input
-                        ref={(el) => { inputRefs.current[rightIdx] = el }}
-                        type="number"
-                        step="any"
-                        value={cells[rightIdx]}
-                        onChange={(e) => updateCell(rightIdx, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, rightIdx)}
-                        placeholder=""
-                        className={[
-                          'w-full px-3 py-1 font-mono text-[13px] text-right',
-                          'focus:outline-none focus:bg-[#e6f3fb]',
-                          cells[rightIdx].trim() !== '' && !isNaN(parseFloat(cells[rightIdx]))
-                            ? 'text-gray-800'
-                            : 'text-gray-300',
-                        ].join(' ')}
-                      />
-                    ) : null}
-                  </div>
+                  ) : null}
                 </div>
-              )
-            })
-          })()}
+              </div>
+            )
+          })}
         </div>
       </div>
 
       {/* 이상치 처리 */}
       <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-        <input
-          type="checkbox"
-          checked={outlierRemoval}
+        <input type="checkbox" checked={outlierRemoval}
           onChange={(e) => setOutlierRemoval(e.target.checked)}
-          className="h-3.5 w-3.5 accent-[#0083CA]"
-        />
+          className="h-3.5 w-3.5 accent-[#0083CA]" />
         <span className="text-gray-700">이상치 자동 제거</span>
-        <span className="text-gray-400 text-[12px]">(IQR × 1.5)</span>
+        <span className="text-[12px] text-gray-400">(IQR × 1.5)</span>
       </label>
 
       {/* 실시간 통계 */}
       {stats && (
         <div className="flex items-center gap-5 rounded-sm border border-[#b3d9f0] bg-[#e6f3fb] px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">n</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">N</span>
             <Badge color={nColor}>{stats.n}</Badge>
           </div>
           <div className="text-[12px] text-gray-600">

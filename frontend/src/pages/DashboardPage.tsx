@@ -44,16 +44,17 @@ export default function DashboardPage() {
       {/* 통계 요약 카드 3개 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { label: 'Total Analyses', value: history?.total ?? '—', unit: '' },
-          { label: 'This Month',     value: '—',                   unit: '' },
-          { label: 'Average Cpk',    value: '—',                   unit: '' },
-        ].map(({ label, value }) => (
+          { label: 'Total Analyses', value: history?.total ?? '—', accent: '#0083CA' },
+          { label: 'This Month',     value: '—',                   accent: '#22C55E' },
+          { label: 'Average Cpk',    value: '—',                   accent: '#F59E0B' },
+        ].map(({ label, value, accent }) => (
           <div
             key={label}
-            className="rounded-sm border border-gray-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+            className="rounded-sm border border-gray-200 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)] text-center"
+            style={{ borderTopWidth: 3, borderTopColor: accent }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
-            <p className="mt-1 text-3xl font-bold text-gray-800">{value}</p>
+            <p className="mt-2 text-4xl font-bold" style={{ color: accent }}>{value}</p>
           </div>
         ))}
       </div>

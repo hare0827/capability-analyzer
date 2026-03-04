@@ -14,7 +14,7 @@ export default function AppLayout() {
     <div className="flex min-h-screen flex-col bg-[#f0f2f4]">
       {/* ── 상단 헤더 (Minitab 스타일 — 검정 바탕) ── */}
       <header className="sticky top-0 z-30 bg-black">
-        <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-0">
+        <div className="flex items-center gap-6 px-8 py-0">
           {/* 로고 */}
           <NavLink to="/dashboard" className="flex items-center gap-2 py-3 shrink-0">
             <div className="flex h-7 w-7 items-center justify-center rounded bg-[#0083CA]">
@@ -63,8 +63,8 @@ export default function AppLayout() {
       {/* 서브 헤더 — 파란 띠 (Minitab 스타일) */}
       <div className="bg-[#0083CA] h-0.5" />
 
-      {/* 콘텐츠 */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+      {/* 콘텐츠 — max-w를 full로 해서 좌측 쏠림 방지 */}
+      <main className="w-full flex-1 px-8 py-6">
         <Outlet />
       </main>
 
