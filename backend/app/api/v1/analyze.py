@@ -63,14 +63,14 @@ async def analyze_endpoint(
         status_code=200,
     )
 
-    # 이력 기록
-    dpmo = (result.cpk.dpmo if result.cpk else None) or (result.ppk.dpmo if result.ppk else None)
+    # 이력 기록 (result.cpk / result.ppk 는 dict)
+    dpmo = (result.cpk['dpmo'] if result.cpk else None) or (result.ppk['dpmo'] if result.ppk else None)
     history_store.add(HistoryRecord(
         id=result.analysis_id,
         user_id=current.user_id,
         mode=req.mode,
-        cpk=result.cpk.cpk if result.cpk else None,
-        ppk=result.ppk.ppk if result.ppk else None,
+        cpk=result.cpk['cpk'] if result.cpk else None,
+        ppk=result.ppk['ppk'] if result.ppk else None,
         dpmo=dpmo,
         part_number=None,
         created_at=datetime.now(timezone.utc).isoformat(),
