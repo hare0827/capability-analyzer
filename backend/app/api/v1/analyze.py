@@ -49,6 +49,11 @@ async def analyze_endpoint(
         result = analyze(inp)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"분석 중 내부 오류가 발생했습니다: {type(exc).__name__}: {exc}",
+        )
 
     log_action(
         user_id=current.user_id,

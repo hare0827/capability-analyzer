@@ -54,7 +54,7 @@ def _sigma_rbar(data: np.ndarray, subgroup_size: int) -> float:
         raise ValueError("데이터가 서브그룹 1개 분량에 미달합니다.")
 
     groups = data[:n_complete].reshape(-1, subgroup_size)
-    ranges = np.ptp(groups, axis=1)   # 각 서브그룹의 Range
+    ranges = groups.max(axis=1) - groups.min(axis=1)   # 각 서브그룹의 Range (np.ptp는 NumPy 2.0에서 제거됨)
     r_bar = float(np.mean(ranges))
     return r_bar / d2
 
