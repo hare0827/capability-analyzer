@@ -46,18 +46,15 @@ export default function ResultPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-500">
-            Analysis Result
-          </p>
-          <h1 className="mt-0.5 text-2xl font-black text-slate-900">분석 결과</h1>
-          <p className="font-mono text-xs text-slate-400">ID: {result.analysis_id}</p>
+          <h1 className="text-xl font-semibold text-gray-800">Analysis Results</h1>
+          <p className="font-mono text-[11px] text-gray-400 mt-0.5">ID: {result.analysis_id}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => navigate('/analyze')}>↩ 재분석</Button>
+          <Button variant="secondary" size="sm" onClick={() => navigate('/analyze')}>← New Analysis</Button>
           <ExportMenu
             result={result}
             mode={mode}
@@ -75,7 +72,7 @@ export default function ResultPage() {
       {result.warnings.length > 0 && (
         <div className="flex flex-col gap-2">
           {result.warnings.map((w: string, i: number) => (
-            <div key={i} className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+            <div key={i} className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-2 text-[13px] text-amber-800">
               {w}
             </div>
           ))}

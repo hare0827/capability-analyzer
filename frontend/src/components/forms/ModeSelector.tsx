@@ -1,24 +1,24 @@
 /**
  * SCR-03: 모드 선택 탭 (Cpk / Ppk / Dual)
- * 사양서 §3 F-C-001
- * - 모드 전환 시 데이터 유지 (Zustand store 유지)
  */
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import type { AnalysisMode } from '@/lib/types'
 
 const MODES: { value: AnalysisMode; label: string; desc: string }[] = [
-  { value: 'cpk',  label: 'Cpk 모드',  desc: '단기 공정 능력 (군내 σ̂)' },
-  { value: 'ppk',  label: 'Ppk 모드',  desc: '장기 공정 성능 (전체 σ)' },
-  { value: 'dual', label: 'Dual 비교', desc: 'Cpk + Ppk 동시 분석' },
+  { value: 'cpk',  label: 'Cpk',  desc: 'Short-term — within-subgroup σ̂' },
+  { value: 'ppk',  label: 'Ppk',  desc: 'Long-term — overall σ' },
+  { value: 'dual', label: 'Dual', desc: 'Compare Cpk and Ppk' },
 ]
 
 export default function ModeSelector() {
   const { mode, setMode } = useAnalysisStore()
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-semibold text-slate-700">분석 모드</label>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        Analysis Type
+      </label>
       <Tabs value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
         <TabsList className="w-full">
           {MODES.map((m) => (
@@ -28,7 +28,7 @@ export default function ModeSelector() {
           ))}
         </TabsList>
       </Tabs>
-      <p className="text-xs text-slate-400">
+      <p className="text-[11px] text-gray-400">
         {MODES.find((m) => m.value === mode)?.desc}
       </p>
     </div>

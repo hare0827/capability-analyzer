@@ -5,19 +5,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Minitab primary blue
+        minitab: {
+          blue:     '#0083CA',
+          'blue-d': '#006aaa',
+          'blue-l': '#e6f3fb',
+        },
         // Gauge 색상 기준 (사양서 §5.2)
         gauge: {
-          red:    '#EF4444',  // Cpk/Ppk < 1.0
-          yellow: '#F59E0B',  // 1.0 ~ 1.33
-          green:  '#22C55E',  // >= 1.33
-          blue:   '#3B82F6',  // >= 1.67
+          red:    '#EF4444',
+          yellow: '#F59E0B',
+          green:  '#22C55E',
+          blue:   '#0083CA',
         },
         // DPMO 색상 기준 (사양서 §7.3)
         dpmo: {
-          red:    '#EF4444',  // > 1,000
-          yellow: '#F59E0B',  // 63 ~ 1,000
-          green:  '#22C55E',  // < 63
-          blue:   '#3B82F6',  // < 1
+          red:    '#EF4444',
+          yellow: '#F59E0B',
+          green:  '#22C55E',
+          blue:   '#0083CA',
         },
       },
     },

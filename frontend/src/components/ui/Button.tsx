@@ -12,38 +12,32 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-r from-indigo-600 to-blue-600 text-white ' +
-    'hover:from-indigo-700 hover:to-blue-700 ' +
-    'disabled:from-indigo-300 disabled:to-blue-300 ' +
-    'shadow-[0_2px_8px_rgba(99,102,241,0.35)] hover:shadow-[0_4px_12px_rgba(99,102,241,0.45)]',
+    'bg-[#0083CA] text-white hover:bg-[#006aaa] ' +
+    'disabled:bg-[#80c1e5] disabled:cursor-not-allowed',
   secondary:
-    'bg-white text-slate-700 border border-slate-200 ' +
-    'hover:bg-slate-50 hover:border-slate-300 ' +
-    'disabled:bg-slate-50 disabled:text-slate-400 ' +
-    'shadow-sm',
-  ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-800',
+    'bg-white text-[#2d2d2d] border border-gray-300 ' +
+    'hover:bg-gray-50 hover:border-gray-400 ' +
+    'disabled:opacity-50 disabled:cursor-not-allowed',
+  ghost:
+    'text-[#0083CA] hover:bg-[#e6f3fb] disabled:opacity-50 disabled:cursor-not-allowed',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 shadow-sm',
+    'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed',
 }
 
 const sizeClass: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: 'px-3 py-1.5 text-[12px]',
+  md: 'px-4 py-2 text-[13px]',
+  lg: 'px-6 py-2.5 text-[14px]',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { variant = 'primary', size = 'md', loading, className, children, disabled, ...props },
-    ref,
-  ) => (
+  ({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }, ref) => (
     <button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
-        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2',
-        'disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex items-center justify-center gap-2 rounded-sm font-medium tracking-wide',
+        'transition-colors focus:outline-none focus:ring-2 focus:ring-[#0083CA] focus:ring-offset-1',
         variantClass[variant],
         sizeClass[size],
         className,
@@ -51,13 +45,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       {...props}
     >
       {loading && (
-        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
+          <path className="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
       )}
       {children}

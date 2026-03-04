@@ -13,45 +13,29 @@
   }
 
   body {
-    @apply text-slate-900 antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-    background-color: #f1f5f9;
+    background-color: #f0f2f4;
+    color: #2d2d2d;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 
 @layer utilities {
   .font-mono {
     font-variant-numeric: tabular-nums;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
   }
 
-  /* 카드 글로우 효과 */
-  .card-glow {
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.1), 0 4px 16px rgba(99, 102, 241, 0.08);
-  }
+  /* 스크롤바 */
+  .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: #f0f2f4; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #c8cdd3; border-radius: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a0a8b4; }
 
-  /* 스크롤바 스타일 */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 2px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 2px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
-  /* input number 화살표 숨김 */
+  /* number input 화살표 숨김 */
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  input[type='number'] {
-    -moz-appearance: textfield;
-  }
+  input[type='number'] { -moz-appearance: textfield; }
 }
