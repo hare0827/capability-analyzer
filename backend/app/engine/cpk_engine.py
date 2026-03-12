@@ -138,8 +138,12 @@ def compute_cpk(
     # 치우침 계수 k (사양서 §5.1)
     k = abs(mean - spec_center) / (tol / 2.0)
 
-    # 불량률 (사양서 §7.1, σ̂ 사용)
-    dm: DefectMetrics = calc_defect_metrics(mean, sigma_hat, usl, lsl)
+    # 불량률: σ_overall(전체 표준편차) 기준으로 계산 (사양서 §7.1)
+    # Cpk 지수 자체는 σ̂_within 기준이지만, 실제 불량률·DPMO·Sigma Level은
+    # 전체 변동(σ_overall)을 반영해야 고객이 실제로 받을 불량률에 가까워진다.
+    sigma_overall = float(np.std(data, ddof=1))
+    effective_sigma = sigma_overall if sigma_overall > 0 else sigma_hat
+    dm: DefectMetrics = calc_defect_metrics(mean, effective_sigma, usl, lsl)
 
     return CpkResult(
         cpk=round(cpk, 6),

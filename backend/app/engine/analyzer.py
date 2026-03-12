@@ -99,6 +99,18 @@ def analyze(inp: AnalyzeInput) -> AnalyzeOutput:
                 "서브그룹 구성이 불가하여 전체 σ로 Cpk를 계산했습니다. "
                 "데이터 수와 서브그룹 크기를 확인하세요."
             )
+        else:
+            n_subgroups = len(arr) // inp.subgroup_size
+            n_discarded = len(arr) % inp.subgroup_size
+            if n_subgroups < 25:
+                warnings.append(
+                    f"서브그룹 수({n_subgroups}개)가 AIAG 권장 최솟값(25개)에 미달합니다. "
+                    f"Cpk 추정값의 불확실성이 높습니다. 데이터를 더 수집하세요."
+                )
+            if n_discarded > 0:
+                warnings.append(
+                    f"불완전한 마지막 서브그룹({n_discarded}개)은 Cpk 계산에서 제외되었습니다."
+                )
 
     if inp.mode in ("ppk", "dual"):
         ppk_res: PpkResult = compute_ppk(arr, inp.usl, inp.lsl)

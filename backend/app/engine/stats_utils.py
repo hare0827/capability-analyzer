@@ -82,12 +82,18 @@ def calc_defect_metrics(mean: float, sigma: float, usl: float, lsl: float) -> De
 
     dpmo = p_total * 1_000_000
 
-    # Sigma Level: 단측 기준 Z값. p_total == 0 이면 매우 높은 수준 반환
-    if p_total <= 0:
-        sigma_level = 8.0   # 사실상 완벽 공정
+    # Sigma Level: worst-tail Z 값 = -Φ⁻¹(max(p_usl, p_lsl))
+    # 대칭 공정: = 3×Cpk (UI 참조 테이블과 일치)
+    # 비대칭 공정: 지배적인 불량 쪽 꼬리의 Z 값 (실질 리스크 반영)
+    # 구 구현 Φ⁻¹(1-p_total/2)는 대칭 공정에서만 우연히 올바르며,
+    # 비대칭 공정에서는 sigma level을 과대추정한다.
+    p_worst = max(p_usl, p_lsl)
+    if p_worst <= 0:
+        sigma_level = 8.0
+    elif p_worst >= 0.5:
+        sigma_level = 0.0
     else:
-        half_p = max(p_total / 2.0, 1e-15)   # log(0) 방지
-        sigma_level = float(stats.norm.ppf(1.0 - half_p))
+        sigma_level = float(-stats.norm.ppf(max(p_worst, 1e-15)))
 
     return DefectMetrics(
         defect_usl_pct=p_usl * 100,

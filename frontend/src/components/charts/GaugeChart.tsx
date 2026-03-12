@@ -15,9 +15,9 @@ interface GaugeChartProps {
 
 // 게이지 구간 정의 (사양서 §5.2)
 const ZONES = [
-  { min: 0,    max: 1.0,  color: '#EF4444', label: 'D/C' },
-  { min: 1.0,  max: 1.33, color: '#F59E0B', label: 'B' },
-  { min: 1.33, max: 1.67, color: '#22C55E', label: 'A' },
+  { min: 0,    max: 1.0,  color: '#EF4444', label: 'D' },
+  { min: 1.0,  max: 1.33, color: '#F59E0B', label: 'C' },
+  { min: 1.33, max: 1.67, color: '#22C55E', label: 'B/A' },
   { min: 1.67, max: 2.0,  color: '#3B82F6', label: 'A+' },
 ]
 
@@ -179,9 +179,9 @@ export default function GaugeChart({ value, label = 'Index', max = 2.0 }: GaugeC
 
       {/* 판정 텍스트 */}
       <text x={CX} y={H - 4} textAnchor="middle" fontSize="10" fill={color} fontWeight="600">
-        {value < 1.0  ? '불합격 (D/C)' :
-         value < 1.33 ? '주의 (B)' :
-         value < 1.67 ? '합격 (A)' : '우수 (A+/A++)'}
+        {value < 1.0  ? '불합격 (D)' :
+         value < 1.33 ? '주의 (C)' :
+         value < 1.67 ? '합격 (B/A)' : '우수 (A+/A++)'}
       </text>
     </svg>
   )
