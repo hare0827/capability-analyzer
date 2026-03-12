@@ -1,15 +1,16 @@
 /**
- * SCR-04: 수동 데이터 입력 — Minitab 워크시트 스타일
- * - 행 우선(row-major): Tab → 오른쪽 → 다음 행 왼쪽 (엑셀과 동일)
- * - cells[row * 2 + col] 방식으로 인덱스 관리
+ * SCR-04: 수동 데이터 입력 — 5열 워크시트 스타일
+ * - Enter: 아래로 이동 (열 우선 입력)
+ * - Tab: 오른쪽 열로 이동
+ * - cells[row * NUM_COLS + col] 인덱스
  */
 import { useState, useEffect, useRef } from 'react'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import { fmt } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 
-const NUM_COLS = 2
-const INITIAL_VISUAL_ROWS = 12   // 12행 × 2열 = 24 셀
+const NUM_COLS = 5
+const INITIAL_VISUAL_ROWS = 10   // 10행 × 5열 = 50 셀
 
 function makeEmptyCells(rows: number) {
   return Array(rows * NUM_COLS).fill('')
@@ -39,26 +40,27 @@ export default function ManualInput() {
   const updateCell = (idx: number, val: string) =>
     setCells((prev) => { const next = [...prev]; next[idx] = val; return next })
 
-  const addRows = (count = 5) =>
-    setCells((prev) => [...prev, ...Array(count * NUM_COLS).fill('')])
+  // 1행 추가 (5칸)
+  const addRow = () =>
+    setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
 
   const clearAll = () => {
     setCells(makeEmptyCells(INITIAL_VISUAL_ROWS))
     setTimeout(() => inputRefs.current[0]?.focus(), 0)
   }
 
-  // 키 내비게이션
+  // 키 내비게이션 — Enter: 아래(열 우선), Tab: 오른쪽
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
     const row = Math.floor(idx / NUM_COLS)
     const col = idx % NUM_COLS
 
     if (e.key === 'ArrowUp') {
-      // ↑ 위 행 같은 열
       e.preventDefault()
       const upIdx = idx - NUM_COLS
       if (upIdx >= 0) inputRefs.current[upIdx]?.focus()
-    } else if (e.key === 'ArrowDown') {
-      // ↓ 아래 행 같은 열 (없으면 행 추가)
+
+    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+      // Enter / ↓ → 아래 행 같은 열 (없으면 행 추가)
       e.preventDefault()
       const downIdx = idx + NUM_COLS
       if (downIdx < cells.length) {
@@ -67,23 +69,38 @@ export default function ManualInput() {
         setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
         setTimeout(() => inputRefs.current[downIdx]?.focus(), 0)
       }
+
     } else if (e.key === 'ArrowLeft') {
       if (col > 0) { e.preventDefault(); inputRefs.current[idx - 1]?.focus() }
+
     } else if (e.key === 'ArrowRight') {
       if (col < NUM_COLS - 1) { e.preventDefault(); inputRefs.current[idx + 1]?.focus() }
-    } else if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
-      // Enter / Tab → 오른쪽, 오른쪽 끝이면 다음 행 왼쪽
+
+    } else if (e.key === 'Tab' && !e.shiftKey) {
+      // Tab → 오른쪽 열, 마지막 열이면 다음 행 첫 열
       e.preventDefault()
-      const next = idx + 1
-      if (next >= cells.length) {
-        setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
-        setTimeout(() => inputRefs.current[next]?.focus(), 0)
+      const nextCol = col + 1
+      if (nextCol < NUM_COLS) {
+        inputRefs.current[row * NUM_COLS + nextCol]?.focus()
       } else {
-        inputRefs.current[next]?.focus()
+        const nextRowFirst = (row + 1) * NUM_COLS
+        if (nextRowFirst < cells.length) {
+          inputRefs.current[nextRowFirst]?.focus()
+        } else {
+          setCells((prev) => [...prev, ...Array(NUM_COLS).fill('')])
+          setTimeout(() => inputRefs.current[nextRowFirst]?.focus(), 0)
+        }
       }
+
     } else if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault()
-      if (idx > 0) inputRefs.current[idx - 1]?.focus()
+      const prevCol = col - 1
+      if (prevCol >= 0) {
+        inputRefs.current[row * NUM_COLS + prevCol]?.focus()
+      } else if (row > 0) {
+        inputRefs.current[(row - 1) * NUM_COLS + (NUM_COLS - 1)]?.focus()
+      }
+
     } else if (e.key === 'Backspace' && cells[idx] === '' && cells.length > NUM_COLS) {
       // 빈 셀에서 Backspace → 해당 행 삭제
       e.preventDefault()
@@ -96,6 +113,9 @@ export default function ManualInput() {
   const n = stats?.n ?? 0
   const nColor: 'red' | 'yellow' | 'green' | 'gray' =
     n === 0 ? 'gray' : n < 5 ? 'red' : n < 30 ? 'yellow' : 'green'
+
+  // 그리드 열 템플릿: 행번호 + 5개 데이터 열
+  const gridCols = `40px repeat(${NUM_COLS}, 1fr)`
 
   return (
     <div className="flex flex-col gap-3">
@@ -120,12 +140,12 @@ export default function ManualInput() {
       {/* 툴바 */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-          Worksheet &nbsp;·&nbsp; Tab / Enter: 오른쪽 → 다음 행
+          Worksheet &nbsp;·&nbsp; Enter: 아래로 &nbsp;/&nbsp; Tab: 오른쪽 열
         </span>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => addRows(5)}
+          <button type="button" onClick={addRow}
             className="text-[12px] font-medium text-[#0083CA] hover:underline">
-            + 5행 추가
+            + 1행 추가
           </button>
           <span className="text-gray-200 select-none">|</span>
           <button type="button" onClick={clearAll}
@@ -137,88 +157,71 @@ export default function ManualInput() {
 
       {/* ── 워크시트 테이블 ── */}
       <div className="overflow-hidden rounded-sm border border-gray-300">
-        {/* 열 헤더 */}
+        {/* 열 헤더 (C1~C5) */}
         <div className="grid bg-gray-100 border-b border-gray-300"
-          style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
+          style={{ gridTemplateColumns: gridCols }}>
           <div className="border-r border-gray-300 py-1.5" />
-          <div className="border-r border-gray-300 px-3 py-1.5 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-            C1
-          </div>
-          <div className="px-3 py-1.5 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-            C2
-          </div>
+          {Array.from({ length: NUM_COLS }, (_, c) => (
+            <div key={c}
+              className={[
+                'py-1.5 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wide',
+                c < NUM_COLS - 1 ? 'border-r border-gray-300' : '',
+              ].join(' ')}>
+              C{c + 1}
+            </div>
+          ))}
         </div>
         {/* 열 이름 행 */}
         <div className="grid border-b border-gray-200 bg-gray-50"
-          style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
+          style={{ gridTemplateColumns: gridCols }}>
           <div className="border-r border-gray-200 py-1" />
-          <div className="border-r border-gray-200 px-3 py-1 text-center text-[11px] text-gray-400 italic">
-            Measurement
-          </div>
-          <div className="px-3 py-1 text-center text-[11px] text-gray-400 italic">
-            Measurement
-          </div>
+          {Array.from({ length: NUM_COLS }, (_, c) => (
+            <div key={c}
+              className={[
+                'py-1 text-center text-[11px] text-gray-400 italic',
+                c < NUM_COLS - 1 ? 'border-r border-gray-200' : '',
+              ].join(' ')}>
+              Measurement
+            </div>
+          ))}
         </div>
 
-        {/* 데이터 행 (row-major) */}
-        <div className="max-h-72 overflow-y-auto bg-white">
-          {Array.from({ length: numRows }, (_, r) => {
-            const idxL = r * NUM_COLS       // C1 셀
-            const idxR = r * NUM_COLS + 1   // C2 셀
-
-            const valL = cells[idxL] ?? ''
-            const valR = cells[idxR] ?? ''
-            const hasRight = idxR < cells.length
-
-            return (
-              <div key={r}
-                className="grid border-b border-gray-100 last:border-b-0 hover:bg-[#f0f7fc] transition-colors"
-                style={{ gridTemplateColumns: '40px 1fr 1fr' }}>
-                {/* 행 번호 */}
-                <div className="flex items-center justify-center border-r border-gray-200 bg-gray-50 text-[11px] font-mono text-gray-400 select-none">
-                  {r + 1}
-                </div>
-                {/* C1 셀 */}
-                <div className="border-r border-gray-100">
-                  <input
-                    ref={(el) => { inputRefs.current[idxL] = el }}
-                    type="number"
-                    step="any"
-                    value={valL}
-                    onChange={(e) => updateCell(idxL, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, idxL)}
-                    className={[
-                      'w-full px-3 py-[5px] font-mono text-[13px] text-right bg-transparent',
-                      'focus:outline-none focus:bg-[#e6f3fb]',
-                      valL.trim() !== '' && !isNaN(parseFloat(valL))
-                        ? 'text-gray-800' : 'text-transparent',
-                    ].join(' ')}
-                    onWheel={(e) => e.currentTarget.blur()}
-                  />
-                </div>
-                {/* C2 셀 */}
-                <div>
-                  {hasRight ? (
+        {/* 데이터 행 */}
+        <div className="max-h-80 overflow-y-auto bg-white">
+          {Array.from({ length: numRows }, (_, r) => (
+            <div key={r}
+              className="grid border-b border-gray-100 last:border-b-0 hover:bg-[#f0f7fc] transition-colors"
+              style={{ gridTemplateColumns: gridCols }}>
+              {/* 행 번호 */}
+              <div className="flex items-center justify-center border-r border-gray-200 bg-gray-50 text-[11px] font-mono text-gray-400 select-none">
+                {r + 1}
+              </div>
+              {/* C1~C5 셀 */}
+              {Array.from({ length: NUM_COLS }, (_, c) => {
+                const idx = r * NUM_COLS + c
+                const val = cells[idx] ?? ''
+                return (
+                  <div key={c} className={c < NUM_COLS - 1 ? 'border-r border-gray-100' : ''}>
                     <input
-                      ref={(el) => { inputRefs.current[idxR] = el }}
+                      ref={(el) => { inputRefs.current[idx] = el }}
                       type="number"
                       step="any"
-                      value={valR}
-                      onChange={(e) => updateCell(idxR, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, idxR)}
+                      value={val}
+                      onChange={(e) => updateCell(idx, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, idx)}
                       className={[
-                        'w-full px-3 py-[5px] font-mono text-[13px] text-right bg-transparent',
+                        'w-full px-2 py-[5px] font-mono text-[13px] text-right bg-transparent',
                         'focus:outline-none focus:bg-[#e6f3fb]',
-                        valR.trim() !== '' && !isNaN(parseFloat(valR))
+                        val.trim() !== '' && !isNaN(parseFloat(val))
                           ? 'text-gray-800' : 'text-transparent',
                       ].join(' ')}
                       onWheel={(e) => e.currentTarget.blur()}
                     />
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

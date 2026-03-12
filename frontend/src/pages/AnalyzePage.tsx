@@ -16,7 +16,12 @@ import type { AnalyzeRequest } from '@/lib/types'
 
 export default function AnalyzePage() {
   const navigate = useNavigate()
-  const { mode, spec, data, subgroupSize, sigmaMethod, outlierRemoval, setResult } = useAnalysisStore()
+  const {
+    mode, spec, data, subgroupSize, sigmaMethod, outlierRemoval, setResult,
+    partNumber, setPartNumber,
+    partName, setPartName,
+    dimensionLocation, setDimensionLocation,
+  } = useAnalysisStore()
 
   const [inputTab, setInputTab] = useState<'manual' | 'file'>('manual')
   const [loading, setLoading] = useState(false)
@@ -34,6 +39,9 @@ export default function AnalyzePage() {
         mode, data, usl: spec.usl, lsl: spec.lsl, nominal: spec.nominal,
         subgroup_size: subgroupSize, sigma_method: sigmaMethod,
         outlier_removal: outlierRemoval,
+        part_number: partNumber || undefined,
+        part_name: partName || undefined,
+        dimension_location: dimensionLocation || undefined,
       }
       const result = await analyzeApi.run(req)
       setResult(result)
@@ -45,7 +53,6 @@ export default function AnalyzePage() {
       const detail = err.response?.data?.detail
 
       if (Array.isArray(detail)) {
-        // Pydantic 422 validation error — detail은 [{loc, msg, type}] 배열
         const msgs = (detail as { msg?: string; loc?: string[] }[])
           .map((d) => d.msg ?? JSON.stringify(d))
           .join(' / ')
@@ -53,7 +60,6 @@ export default function AnalyzePage() {
       } else if (typeof detail === 'string') {
         setApiError(detail)
       } else if (!err.response) {
-        // 네트워크 에러 (서버 미응답)
         setApiError(`서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요. (${err.message ?? 'Network Error'})`)
       } else if (status === 422) {
         setApiError('입력값 형식이 올바르지 않습니다. USL/LSL과 데이터를 다시 확인하세요.')
@@ -102,6 +108,53 @@ export default function AnalyzePage() {
       <div className="flex gap-5">
         {/* 왼쪽 사이드바 — 고정 너비 280px */}
         <div className="flex w-[280px] shrink-0 flex-col gap-4">
+
+          {/* 파트 정보 */}
+          <Card>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#0083CA] border-b border-gray-100 pb-2">
+              Part Information
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  Part No.
+                </label>
+                <input
+                  type="text"
+                  value={partNumber}
+                  onChange={(e) => setPartNumber(e.target.value)}
+                  placeholder="예) P-2024-001"
+                  className="w-full rounded-sm border border-gray-300 px-2.5 py-1.5 text-[13px] text-gray-800 placeholder:text-gray-300 focus:border-[#0083CA] focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  Part Name
+                </label>
+                <input
+                  type="text"
+                  value={partName}
+                  onChange={(e) => setPartName(e.target.value)}
+                  placeholder="예) 하우징 커버"
+                  className="w-full rounded-sm border border-gray-300 px-2.5 py-1.5 text-[13px] text-gray-800 placeholder:text-gray-300 focus:border-[#0083CA] focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  도면 치수 위치
+                </label>
+                <input
+                  type="text"
+                  value={dimensionLocation}
+                  onChange={(e) => setDimensionLocation(e.target.value)}
+                  placeholder="예) A-A 단면 Ø12.5"
+                  className="w-full rounded-sm border border-gray-300 px-2.5 py-1.5 text-[13px] text-gray-800 placeholder:text-gray-300 focus:border-[#0083CA] focus:outline-none"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* 분석 옵션 */}
           <Card>
             <p className="mb-4 text-[11px] font-bold uppercase tracking-widest text-[#0083CA] border-b border-gray-100 pb-2">
               Analysis Options

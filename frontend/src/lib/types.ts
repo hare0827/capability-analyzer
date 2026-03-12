@@ -16,14 +16,17 @@ export interface SpecInput {
 
 // ── 분석 요청 (§9.2) ───────────────────────────────
 export interface AnalyzeRequest {
-  mode:            AnalysisMode
-  data:            number[]
-  usl:             number
-  lsl:             number
-  nominal?:        number
-  subgroup_size?:  number   // Cpk 전용 (default: 5)
-  sigma_method?:   SigmaMethod
-  outlier_removal?: boolean
+  mode:               AnalysisMode
+  data:               number[]
+  usl:                number
+  lsl:                number
+  nominal?:           number
+  subgroup_size?:     number   // Cpk 전용 (default: 5)
+  sigma_method?:      SigmaMethod
+  outlier_removal?:   boolean
+  part_number?:       string
+  part_name?:         string
+  dimension_location?: string
 }
 
 // ── 단일 지수 결과 ─────────────────────────────────

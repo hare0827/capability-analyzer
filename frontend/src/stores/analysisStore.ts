@@ -6,6 +6,14 @@ interface AnalysisState {
   mode: AnalysisMode
   setMode: (mode: AnalysisMode) => void
 
+  // 파트 정보
+  partNumber: string
+  setPartNumber: (v: string) => void
+  partName: string
+  setPartName: (v: string) => void
+  dimensionLocation: string
+  setDimensionLocation: (v: string) => void
+
   // 규격
   spec: SpecInput
   setSpec: (spec: Partial<SpecInput>) => void
@@ -38,6 +46,13 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   mode: 'cpk',
   setMode: (mode) => set({ mode }),
 
+  partNumber: '',
+  setPartNumber: (partNumber) => set({ partNumber }),
+  partName: '',
+  setPartName: (partName) => set({ partName }),
+  dimensionLocation: '',
+  setDimensionLocation: (dimensionLocation) => set({ dimensionLocation }),
+
   spec: INITIAL_SPEC,
   setSpec: (partial) =>
     set((s) => ({ spec: { ...s.spec, ...partial } })),
@@ -59,6 +74,9 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
 
   reset: () => set({
     mode: 'cpk',
+    partNumber: '',
+    partName: '',
+    dimensionLocation: '',
     spec: INITIAL_SPEC,
     data: [],
     subgroupSize: 5,
