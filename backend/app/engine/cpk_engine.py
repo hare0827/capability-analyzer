@@ -106,7 +106,6 @@ def compute_cpk(
     if len(data) < subgroup_size:
         raise ValueError(f"데이터 수({len(data)})가 서브그룹 크기({subgroup_size})보다 적습니다.")
 
-    mean = float(np.mean(data))
     spec_center = (usl + lsl) / 2.0   # 규격 중심 M
     tol = usl - lsl                    # 공차폭
 
@@ -123,6 +122,14 @@ def compute_cpk(
         # 서브그룹 구성 불가 → 전체 σ 폴백 (사양서 §4.1 서브그룹 미설정 시)
         sigma_hat = float(np.std(data, ddof=1))
         method_used = "overall_fallback"
+
+    # 평균: sigma 계산에 사용된 데이터와 일치시킴 (불완전 서브그룹 제외)
+    # 불일치 시 Cpk 공식의 분자(USL-mean)와 분모(3σ̂)의 기준 데이터가 달라짐.
+    if method_used in ("rbar", "sbar"):
+        n_complete = (len(data) // subgroup_size) * subgroup_size
+        mean = float(np.mean(data[:n_complete]))
+    else:
+        mean = float(np.mean(data))
 
     if sigma_hat <= 0:
         raise ValueError("σ̂ 계산 결과가 0 이하입니다. 데이터를 확인하세요.")
